@@ -1,6 +1,6 @@
-# vinext-starter
+# LevelCraft Academy
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+A gamified Java 17, Spring and Spring Boot learning academy. The current production baseline runs on [vinext](https://github.com/cloudflare/vinext), with Cloudflare D1 and Drizzle support.
 
 ## Prerequisites
 

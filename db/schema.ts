@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const learners = sqliteTable("learners", {
   userId: text("user_id").primaryKey(),
@@ -16,6 +16,15 @@ export const progress = sqliteTable("progress", {
   checkpoint: integer("checkpoint").notNull().default(0),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const journeyProgress = sqliteTable("journey_progress", {
+  userId: text("user_id").notNull().references(() => learners.userId, { onDelete: "cascade" }),
+  track: text("track").notNull(),
+  completedJson: text("completed_json").notNull().default("[]"),
+  xp: integer("xp").notNull().default(0),
+  checkpoint: integer("checkpoint").notNull().default(0),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [primaryKey({ columns: [table.userId, table.track] })]);
 
 export const friendships = sqliteTable("friendships", {
   id: integer("id").primaryKey({ autoIncrement: true }),

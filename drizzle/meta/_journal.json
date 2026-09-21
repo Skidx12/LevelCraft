@@ -8,6 +8,13 @@
       "when": 1789995456265,
       "tag": "0000_milky_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789996605267,
+      "tag": "0001_sturdy_phil_sheldon",
+      "breakpoints": true
     }
   ]
 }

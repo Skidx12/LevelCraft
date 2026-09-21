@@ -21,6 +21,8 @@ export const journeyProgress = sqliteTable("journey_progress", {
   userId: text("user_id").notNull().references(() => learners.userId, { onDelete: "cascade" }),
   track: text("track").notNull(),
   completedJson: text("completed_json").notNull().default("[]"),
+  sideQuestsJson: text("side_quests_json").notNull().default("[]"),
+  capstoneKey: text("capstone_key"),
   xp: integer("xp").notNull().default(0),
   checkpoint: integer("checkpoint").notNull().default(0),
   updatedAt: integer("updated_at").notNull(),

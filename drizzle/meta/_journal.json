@@ -15,6 +15,13 @@
       "when": 1789996605267,
       "tag": "0001_sturdy_phil_sheldon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790017435427,
+      "tag": "0002_mature_gargoyle",
+      "breakpoints": true
     }
   ]
 }

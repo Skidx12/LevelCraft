@@ -190,7 +190,7 @@ const java: TrainingDepth[] = [
       {title:"Remove shared mutation",action:"Return immutable task results and combine them after completion.",why:"Confinement is simpler and safer than coordinating writes.",observe:"Repeated runs become deterministic."}
     ],
     coaching:[
-      {wrong:"Create a new Thread for every request.",better:"Use structured concurrency, virtual threads or a deliberately sized executor.",reason:"Execution capacity and lifecycle must be controlled."},
+      {wrong:"Create a new Thread for every request.",better:"On Java 17, use a deliberately sized ExecutorService and define its queue, timeout and shutdown policy.",reason:"Execution capacity and lifecycle must be controlled; virtual threads are outside this Java 17 path."},
       {wrong:"Fix timing issues by adding sleep.",better:"Coordinate using futures, latches, locks or immutable task results.",reason:"Sleep guesses timing and makes failures intermittent."}
     ],
     coachQuestion:"If three supplier calls are independent, what must still be defined besides running them concurrently?"
@@ -295,16 +295,18 @@ const spring: TrainingDepth[] = [
     guided:[
       {title:"Wire objects manually",action:"Create InMemoryStudentRepository, then pass it into new StudentService(repository).",why:"Manual wiring reveals the responsibility that will move to Spring.",observe:"StudentService never needs to know how the repository was created."},
       {title:"Create managed components",action:"Mark the implementation @Repository and the service @Service.",why:"Component scanning registers eligible classes as bean definitions.",observe:"Spring knows which classes it may instantiate."},
-      {title:"Use constructor injection",action:"Keep a single constructor accepting StudentRepository and start the application.",why:"Spring resolves the interface to the discovered implementation and supplies it.",observe:"No application code calls new StudentService."},
+      {title:"Compare all three injection styles",action:"Implement StudentRepository injection once through a constructor, once through a setter and once through an @Autowired field.",why:"A recommendation is meaningful only after its alternatives and consequences are visible.",observe:"All three can run, but only the constructor makes a required dependency part of the creation contract."},
+      {title:"Choose by dependency contract",action:"Keep StudentRepository in the constructor; add an optional AuditSink through a setter with a safe no-op default.",why:"Required and optional collaborators have different validity rules.",observe:"StudentService is always valid, while optional behaviour can be replaced deliberately."},
       {title:"Break scanning deliberately",action:"Move the repository outside the scan path, run, read the failure, then repair the package layout.",why:"A failed experiment makes component scanning concrete.",observe:"Startup reports that no StudentRepository bean is available."},
       {title:"Inspect the container",action:"Print selected bean names or request StudentService from ApplicationContext in a small runner.",why:"The container becomes observable rather than magical.",observe:"The same singleton service instance is returned within one context."}
     ],
     coaching:[
       {wrong:"Spring removes the need to understand object construction.",better:"Design plain Java objects first; use Spring to assemble application-level collaborators.",reason:"Framework wiring cannot rescue unclear responsibilities."},
-      {wrong:"Use @Autowired on private fields because it is shorter.",better:"Use constructor injection for required dependencies.",reason:"Requirements become explicit, immutable and easy to test."},
+      {wrong:"Use @Autowired on private fields because it is shorter.",better:"Implement field injection in the comparison lab, then use constructor injection for required production dependencies.",reason:"Field injection works, but hides the construction contract and makes plain unit testing and immutability harder."},
+      {wrong:"Assume setter injection is always wrong.",better:"Use a setter only when a collaborator is genuinely optional or intentionally reconfigurable and a safe default exists.",reason:"The choice should describe the object's validity rules rather than follow a slogan."},
       {wrong:"Make every object a bean.",better:"Keep DTOs, entities and value objects as ordinary objects unless the container must manage them.",reason:"Container ownership should serve lifecycle or application wiring."}
     ],
-    coachQuestion:"Who creates StudentService before Spring, who creates it after Spring, and what stays unchanged inside the class?"
+    coachQuestion:"How would constructor, setter and field injection change whether StudentService can exist in an invalid or partially initialised state?"
   },
   {
     opening:"Spring Boot is Spring with an opinionated startup system. You will inspect what it configures, why it chooses that configuration and how your own bean or property changes the decision.",

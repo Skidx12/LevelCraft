@@ -832,6 +832,8 @@ The work should proceed in controlled releases. Infrastructure migration remains
 
 ### Phase 0 — Curriculum and dependency audit
 
+**Status:** Complete. See [`docs/curriculum/PHASE-0-CURRICULUM-AUDIT.md`](./docs/curriculum/PHASE-0-CURRICULUM-AUDIT.md) and [`docs/curriculum/CONTENT-REVIEW-SCORECARD.md`](./docs/curriculum/CONTENT-REVIEW-SCORECARD.md).
+
 **Objective:** Establish the authoritative inventory before rewriting content.
 
 Deliverables:
@@ -1257,4 +1259,3 @@ LevelCraft succeeds when a beginner can answer all of the following without gues
 - How does this help the next mission?
 
 If any mission cannot answer those questions, it is not ready—regardless of how polished its visuals or rewards appear.
-

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../chatgpt-auth";
-import { getMission, type LearningTrack } from "../../../content/catalog";
+import { getMission, type LearningTrack } from "@/modules/curriculum/public";
+import { loadStructuredMission } from "@/modules/content/server/load-structured-mission";
 import MissionRouteClient from "./MissionRouteClient";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,10 @@ export default async function MissionRoute({ params }: { params: Promise<{ track
   const mission = track && Number.isInteger(missionId) ? getMission(track, missionId) : undefined;
   if (!track || !mission) notFound();
 
-  const user = await requireChatGPTUser(`/mission/${trackSlug}/${rawId}`);
-  return <MissionRouteClient track={track} mission={mission} user={{ displayName: user.displayName, email: user.email }} />;
-}
+  const [user, structuredMission] = await Promise.all([
+    requireChatGPTUser(`/mission/${trackSlug}/${rawId}`),
+    loadStructuredMission(track, missionId),
+  ]);
 
+  return <MissionRouteClient track={track} mission={mission} structuredMission={structuredMission} user={{ displayName: user.displayName, email: user.email }} />;
+}

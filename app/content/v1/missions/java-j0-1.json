@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "id": "J0.1",
+  "legacy": { "track": "Java", "numericId": 0 },
+  "arcId": "J0",
+  "rank": "E",
+  "status": "technical_review",
+  "title": "From Java source to a running program",
+  "summary": "Follow a Java file through compilation and JVM execution, then learn to separate compiler failures from runtime failures.",
+  "xp": 180,
+  "estimatedMinutes": 45,
+  "prerequisiteIds": [],
+  "outcomes": [
+    "Explain the distinct responsibilities of the JDK, javac, bytecode and JVM.",
+    "Compile and run a Java 17 console program using repeatable commands.",
+    "Classify a failure as source, compilation or runtime related.",
+    "Read a compiler message and make one evidence-based repair."
+  ],
+  "briefing": {
+    "story": "The Student Registration campaign begins with an empty console. Before building students, repositories or APIs, you must understand how a readable Java file becomes instructions a computer can execute.",
+    "purpose": "A learner who understands the build-and-run path can diagnose errors instead of treating the IDE as a magic Run button.",
+    "mentalModel": "Think of source code as a recipe written for developers. javac checks and translates that recipe into bytecode, a standard package of instructions. A JVM installed for a particular operating system reads that package and executes it.",
+    "prerequisites": [
+      { "name": "File", "explanation": "A named piece of information stored on a computer. Java source files conventionally end in .java." },
+      { "name": "Command", "explanation": "An instruction entered in a terminal or triggered by an IDE, such as compile or run." },
+      { "name": "Program", "explanation": "A set of instructions arranged to produce behaviour when executed." }
+    ],
+    "terms": [
+      { "term": "JDK", "meaning": "The Java Development Kit: the compiler, launcher and other tools required to build Java software.", "example": "The javac command is supplied by the JDK." },
+      { "term": "Compiler", "meaning": "A program that checks source code and translates it into another representation.", "example": "javac StudentApp.java creates StudentApp.class when compilation succeeds." },
+      { "term": "Bytecode", "meaning": "The platform-neutral instructions stored in a Java class file.", "example": "StudentApp.class contains bytecode rather than editable Java source." },
+      { "term": "JVM", "meaning": "The Java Virtual Machine that loads, verifies and executes bytecode on a particular system.", "example": "java StudentApp starts a JVM and asks it to run StudentApp." },
+      { "term": "Entry point", "meaning": "The method where a console application's execution begins.", "example": "public static void main(String[] args) is the entry point used here." }
+    ],
+    "misconceptions": [
+      { "belief": "The JVM directly understands the text inside a .java file.", "correction": "The normal path compiles source into bytecode first; the JVM loads the resulting class." },
+      { "belief": "If compilation succeeds, the program cannot fail.", "correction": "Compilation proves syntax and type rules, not every runtime input or behaviour." }
+    ],
+    "readinessCheck": "In your own words, name the artifact before compilation, the artifact after compilation and the component that executes the compiled artifact."
+  },
+  "demonstration": {
+    "title": "Register the first hunter",
+    "introduction": "This complete one-file application is intentionally small. Its job is to prove the toolchain before domain complexity is introduced.",
+    "files": [
+      {
+        "path": "src/StudentRegistrationApp.java",
+        "language": "java",
+        "code": "public class StudentRegistrationApp {\n  public static void main(String[] args) {\n    String studentId = \"STU-101\";\n    String studentName = \"Ravi\";\n\n    System.out.println(\"Registration system online\");\n    System.out.printf(\"Candidate %s: %s%n\", studentId, studentName);\n  }\n}\n"
+      }
+    ],
+    "runInstructions": [
+      "Open a terminal in the src directory.",
+      "Run javac StudentRegistrationApp.java and confirm that StudentRegistrationApp.class appears.",
+      "Run java StudentRegistrationApp without adding .class to the command.",
+      "Repeat the run from the IDE and confirm that both routes produce the same output."
+    ],
+    "expectedOutput": "Registration system online\nCandidate STU-101: Ravi",
+    "executionFlow": [
+      "javac reads StudentRegistrationApp.java and checks syntax and types.",
+      "Successful compilation produces StudentRegistrationApp.class containing bytecode.",
+      "The java launcher starts a JVM and loads the StudentRegistrationApp class.",
+      "The JVM invokes main, creates two String values and calls the output methods."
+    ]
+  },
+  "training": {
+    "workspace": "Use Java 17 in IntelliJ IDEA, VS Code, Eclipse or a terminal. Keep the source file and generated class file visible during the first two steps.",
+    "steps": [
+      {
+        "title": "Prove the source-to-bytecode transition",
+        "goal": "See that source and compiled output are separate artifacts.",
+        "why": "This distinction explains why compilation errors occur before program execution.",
+        "where": "The directory containing StudentRegistrationApp.java.",
+        "action": "Delete any old .class file, run javac StudentRegistrationApp.java and inspect the directory.",
+        "observe": "A new StudentRegistrationApp.class file appears and the application has not printed anything yet.",
+        "ifItFails": "If javac is not recognized, verify that a Java 17 JDK—not only an editor—is installed and configured.",
+        "checkpoint": "You can point to the editable source and compiled bytecode as two different files."
+      },
+      {
+        "title": "Execute the compiled class",
+        "goal": "Start the JVM and run the entry point.",
+        "why": "Running is a different operation from compiling.",
+        "where": "The same terminal directory.",
+        "action": "Run java StudentRegistrationApp.",
+        "observe": "The two expected lines appear without creating a new source file.",
+        "ifItFails": "If Java reports that it cannot find the main class, confirm the current directory, class name and capitalization.",
+        "checkpoint": "Your console output exactly matches the demonstration output."
+      },
+      {
+        "title": "Create a compile-time failure",
+        "goal": "Learn to read a compiler message without guessing.",
+        "why": "Compiler feedback normally names a location, an expected type and the incompatible value.",
+        "where": "The studentId declaration in StudentRegistrationApp.java.",
+        "action": "Temporarily change String studentId to int studentId while leaving the text value unchanged, then compile.",
+        "observe": "javac reports an incompatible-types error and no new runnable class is produced from the broken source.",
+        "ifItFails": "If the application still runs, you may be executing the older .class file. Compilation and execution are separate; inspect timestamps or delete the old class file.",
+        "checkpoint": "You can identify the source line and explain why text cannot be assigned to an int."
+      },
+      {
+        "title": "Repair and verify",
+        "goal": "Close the debugging loop with evidence.",
+        "why": "A repair is complete only after compilation and execution both succeed.",
+        "where": "StudentRegistrationApp.java and the terminal.",
+        "action": "Restore String studentId, compile again and run the application.",
+        "observe": "Compilation succeeds and the original output returns.",
+        "ifItFails": "Read the first compiler error, fix only that issue and compile again before changing anything else.",
+        "checkpoint": "The program compiles from the repaired source and produces the expected output."
+      }
+    ],
+    "breakRepair": {
+      "breakAction": "Rename the class to RegistrationConsole without renaming the file, then compile.",
+      "symptom": "javac reports that a public class must be declared in a file with the matching name.",
+      "repair": "Rename the file to RegistrationConsole.java or restore the original public class name, then compile and run using the matching name.",
+      "lesson": "Java's public top-level class and source filename convention is part of how tools locate code consistently."
+    },
+    "pauseAndExplain": [
+      { "level": "recall", "prompt": "What does javac produce when compilation succeeds?" },
+      { "level": "trace", "prompt": "What happens between entering java StudentRegistrationApp and seeing the first output line?" },
+      { "level": "compare", "prompt": "How is a compiler error different from a runtime exception?" },
+      { "level": "predict", "prompt": "What happens if the source changes but you run an older class file without compiling again?" }
+    ]
+  },
+  "hunterNotes": {
+    "coreRules": [
+      "Compile after source changes before trusting execution output.",
+      "Treat the first useful error as evidence; avoid making several speculative changes at once.",
+      "Use Java 17 consistently across the IDE, terminal and project configuration.",
+      "Do not commit generated .class files into normal source control."
+    ],
+    "useCases": [
+      "Diagnosing why code works in an IDE but fails in a terminal or build pipeline.",
+      "Separating syntax/type problems from failures caused by runtime data.",
+      "Explaining Java's portability model without claiming bytecode is native machine code."
+    ],
+    "avoidWhen": [
+      "Do not use manual javac commands as the permanent build strategy for a multi-module enterprise application; build tools will later coordinate dependencies, tests and packaging."
+    ],
+    "advantages": [
+      "The compilation boundary catches many errors before execution.",
+      "Bytecode allows the same compiled representation to run on compatible JVM implementations."
+    ],
+    "costs": [
+      "The JDK, project and runtime versions must be aligned.",
+      "Stale compiled output can confuse beginners when source changes are not recompiled."
+    ],
+    "alternatives": [
+      { "option": "IDE Run action", "chooseWhen": "You want convenient compilation, execution and debugging during development.", "tradeOff": "The IDE can hide the underlying commands unless you inspect its configuration." },
+      { "option": "Maven or Gradle", "chooseWhen": "The project has dependencies, tests, packaging or multiple modules.", "tradeOff": "Build tools add configuration that should be introduced after the basic toolchain is understood." }
+    ],
+    "mistakes": [
+      { "symptom": "java cannot find or load the main class.", "cause": "Wrong directory, classpath, package or capitalization.", "correction": "Confirm the compiled file location, package name and exact class name before changing code." },
+      { "symptom": "Old output appears after source was edited.", "cause": "The changed source was not compiled or an old class was executed.", "correction": "Clean the generated class, compile the intended file and verify timestamps or build output." }
+    ],
+    "interviewRecall": [
+      { "question": "What is the difference between JDK, JVM and bytecode?", "answer": "The JDK supplies development tools including javac; javac produces bytecode; a JVM loads and executes that bytecode on a particular platform." }
+    ],
+    "references": [
+      { "title": "Oracle Java 17 language updates", "url": "https://docs.oracle.com/en/java/javase/17/language/", "kind": "primary" },
+      { "title": "Java launcher documentation", "url": "https://docs.oracle.com/en/java/javase/17/docs/specs/man/java.html", "kind": "primary" },
+      { "title": "javac documentation", "url": "https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html", "kind": "primary" }
+    ]
+  },
+  "quest": {
+    "scenario": "The academy needs a console status card for its first Student Management build. A user should be able to compile it, run it and confirm which Java runtime is active.",
+    "currentState": "You have a working Java 17 environment and the demonstration application. The quest starts in a new file so you must reproduce the toolchain independently.",
+    "requirements": [
+      "Create SystemStatus.java with a valid main method.",
+      "Declare academyName and campaignName as descriptive String variables.",
+      "Read the active Java version using System.getProperty(\"java.version\").",
+      "Print three labelled lines: academy, campaign and Java runtime."
+    ],
+    "constraints": [
+      "Use only Java 17 standard-library functionality and one source file.",
+      "Do not hard-code the runtime version text.",
+      "The source filename and public class name must match."
+    ],
+    "acceptanceCriteria": [
+      "javac SystemStatus.java completes without a compiler error.",
+      "java SystemStatus prints exactly three labelled, non-empty lines.",
+      "The runtime line reflects the environment value returned by Java.",
+      "A second learner can reproduce the result from your commands."
+    ],
+    "nonGoals": [
+      "No user input, database, Spring annotation or multi-file design is required."
+    ],
+    "starterFiles": [
+      {
+        "path": "src/SystemStatus.java",
+        "language": "java",
+        "code": "public class SystemStatus {\n  public static void main(String[] args) {\n    // 1. Declare the academy and campaign names.\n    // 2. Ask Java for the active runtime version.\n    // 3. Print the three labelled lines.\n  }\n}\n"
+      }
+    ],
+    "hints": [
+      "System.getProperty accepts a property name and returns its value as text.",
+      "Compile first with javac SystemStatus.java, then run with java SystemStatus."
+    ],
+    "expectedBehaviour": [
+      "The first two lines identify LevelCraft and the Student Registration campaign.",
+      "The third line reports the actual Java runtime rather than a manually typed version."
+    ],
+    "evidence": {
+      "instructions": "Paste your source code and the three output lines, then explain in one sentence which tool compiled the source and which component executed the result.",
+      "minimumCharacters": 100
+    },
+    "validation": {
+      "mode": "guided-evidence",
+      "instructions": [
+        "Confirm all four acceptance criteria manually.",
+        "Compare the runtime value with java -version.",
+        "Record both the successful compile command and run command in the evidence."
+      ]
+    }
+  },
+  "trial": {
+    "explainPrompt": "A teammate edits a message in SystemStatus.java, runs java SystemStatus immediately and still sees the old message. Explain the most likely cause and the correct recovery sequence.",
+    "question": "Which component normally executes the bytecode stored in a compiled Java class file?",
+    "options": ["javac", "The JVM", "The source editor", "Git"],
+    "answer": 1,
+    "explanation": "javac compiles source into bytecode. The JVM loads, verifies and executes the resulting class."
+  },
+  "debrief": {
+    "capability": "You can independently compile, run and diagnose a basic Java 17 program.",
+    "applicationEvolution": "The Student Management campaign now has a verified execution environment and its first runnable status program.",
+    "tradeOff": "IDE automation is convenient, but understanding the underlying compiler and runtime makes tool failures diagnosable.",
+    "nextMission": "J0.2 introduces the IDE workbench, packages, breakpoints and stack-trace navigation.",
+    "reflection": "Which part of your normal IDE Run action was invisible to you before this mission?"
+  },
+  "review": {
+    "contentVersion": "1.0.0-rc1",
+    "author": "LevelCraft Curriculum Team",
+    "technicalReviewer": null,
+    "beginnerReviewer": null,
+    "editorialReviewer": null,
+    "lastReviewed": "2026-09-22",
+    "testedWith": { "java": "17", "springBoot": null },
+    "changeNote": "First schema-v1 Java golden mission for Content Review Mode."
+  }
+}
+

@@ -1,0 +1,2 @@
+ALTER TABLE `journey_progress` ADD `completed_mission_ids_json` text DEFAULT '[]' NOT NULL;--> statement-breakpoint
+ALTER TABLE `journey_progress` ADD `section_progress_json` text DEFAULT '{}' NOT NULL;

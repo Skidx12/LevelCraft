@@ -8,12 +8,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MissionContent, MissionFile } from "@/app/content/mission-schema";
 import { learnerLevels, levelPrompt, type LearnerLevel } from "@/app/content/learner-levels";
+import type { MissionSection } from "@/modules/progress/model/progress";
 
 type SchemaMissionPageProps = {
   mission: MissionContent;
   completed: boolean;
   learnerLevel: LearnerLevel;
+  initialSection: MissionSection;
   onLevelChange: (level: LearnerLevel) => void;
+  onSectionChange: (section: MissionSection) => void;
   onBack: () => void;
   onComplete: (legacyId: number) => void;
 };
@@ -46,8 +49,8 @@ function ContentReviewBadge({ mission }: { mission: MissionContent }) {
   );
 }
 
-export default function SchemaMissionPage({ mission, completed, learnerLevel, onLevelChange, onBack, onComplete }: SchemaMissionPageProps) {
-  const [tab, setTab] = useState("briefing");
+export default function SchemaMissionPage({ mission, completed, learnerLevel, initialSection, onLevelChange, onSectionChange, onBack, onComplete }: SchemaMissionPageProps) {
+  const [tab, setTab] = useState<MissionSection>(initialSection);
   const [trainingComplete, setTrainingComplete] = useState(false);
   const [checked, setChecked] = useState<number[]>([]);
   const [evidence, setEvidence] = useState("");
@@ -62,7 +65,7 @@ export default function SchemaMissionPage({ mission, completed, learnerLevel, on
   const evidenceReady = evidence.trim().length >= mission.quest.evidence.minimumCharacters;
   const quizCorrect = Number(answer) === mission.trial.answer;
   const canClaim = trained && allChecked && evidenceReady && quizChecked && quizCorrect;
-  const move = (next: string) => { setTab(next); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const move = (next: string) => { const section = next as MissionSection; setTab(section); onSectionChange(section); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const toggle = (index: number) => setChecked((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index]);
 
   if (claimed) {
@@ -153,10 +156,9 @@ export default function SchemaMissionPage({ mission, completed, learnerLevel, on
         <TabsContent value="checkpoint" className="lesson-scroll">
           <div className="coach-prompt trial-question"><Lightbulb/><div><span>EXPLAIN BEFORE YOU ANSWER</span><p>{mission.trial.explainPrompt}</p><small>Your reasoning is part of the evidence.</small></div></div>
           <div className="quiz-card"><span>RANK TRIAL · KNOWLEDGE CHECK</span><h3>{mission.trial.question}</h3><RadioGroup value={answer} onValueChange={(value) => { setAnswer(value); setQuizChecked(false); }}>{mission.trial.options.map((option, index) => <label className={`quiz-option ${quizChecked && index === mission.trial.answer ? "correct" : ""} ${quizChecked && answer === String(index) && index !== mission.trial.answer ? "wrong" : ""}`} key={option}><RadioGroupItem value={String(index)}/><span>{option}</span></label>)}</RadioGroup><Button variant="outline" disabled={answer === ""} onClick={() => setQuizChecked(true)}>Check answer</Button>{quizChecked ? <div className={`quiz-feedback ${quizCorrect ? "success" : "error"}`}><b>{quizCorrect ? "Correct — rank trial passed" : "Not yet — revisit the evidence"}</b><p>{mission.trial.explanation}</p></div> : null}</div>
-          <div className="claim-panel"><div><span>MISSION VALIDATION</span><p><i className={trained ? "done" : ""}>{trained ? <Check/> : null}</i>Guided training acknowledged</p><p><i className={allChecked ? "done" : ""}>{allChecked ? <Check/> : null}</i>Acceptance criteria confirmed</p><p><i className={evidenceReady ? "done" : ""}>{evidenceReady ? <Check/> : null}</i>Evidence submitted</p><p><i className={quizCorrect && quizChecked ? "done" : ""}>{quizCorrect && quizChecked ? <Check/> : null}</i>Knowledge check passed</p></div><Button disabled={!canClaim} onClick={() => { onComplete(mission.legacy.numericId); setClaimed(true); }}><Trophy/> Complete mission & claim {mission.xp} XP</Button></div>
+          <div className="claim-panel"><div><span>MISSION VALIDATION</span><p><i className={trained ? "done" : ""}>{trained ? <Check/> : null}</i>Guided training acknowledged</p><p><i className={allChecked ? "done" : ""}>{allChecked ? <Check/> : null}</i>Acceptance criteria confirmed</p><p><i className={evidenceReady ? "done" : ""}>{evidenceReady ? <Check/> : null}</i>Evidence submitted</p><p><i className={quizCorrect && quizChecked ? "done" : ""}>{quizCorrect && quizChecked ? <Check/> : null}</i>Knowledge check passed</p></div><Button disabled={!canClaim} onClick={() => { onComplete(mission.legacy.numericId); onSectionChange("debrief"); setClaimed(true); }}><Trophy/> Complete mission & claim {mission.xp} XP</Button></div>
         </TabsContent>
       </Tabs>
     </main>
   );
 }
-

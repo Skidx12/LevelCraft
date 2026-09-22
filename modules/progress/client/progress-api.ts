@@ -1,4 +1,4 @@
-import type { ProgressSnapshot, SaveProgressCommand } from "../model/progress";
+import type { ProgressSnapshot, SaveProgressCommand, SaveSectionProgressCommand } from "../model/progress";
 
 async function readJson<T>(response: Response): Promise<T> {
   const body = (await response.json()) as T & { error?: string };
@@ -18,4 +18,13 @@ export async function saveProgress(command: SaveProgressCommand) {
     body: JSON.stringify({ action: "save_progress", ...command }),
   });
   return readJson<{ status: "saved"; xp: number; checkpoint: number }>(response);
+}
+
+export async function saveSectionProgress(command: SaveSectionProgressCommand) {
+  const response = await fetch("/api/progress", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "save_section_progress", ...command }),
+  });
+  return readJson<{ status: "saved" }>(response);
 }

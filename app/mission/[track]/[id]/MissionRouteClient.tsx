@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MissionPage } from "../../../LevelCraftClient";
+import MissionPage from "@/modules/missions/ui/MissionPage";
 import type { LearningMission, LearningTrack } from "../../../content/catalog";
 import type { LearnerLevel } from "../../../content/learner-levels";
+import type { MissionContent } from "../../../content/mission-schema";
+import { loadProgress, saveProgress } from "@/modules/progress/client/progress-api";
+import type { CapstoneState, JourneyState, SideQuestState } from "@/modules/progress/model/progress";
 
-type JourneyState = Record<string, number[]>;
-type CapstoneState = Record<string, string | null>;
-type ProgressResponse = { own?: { level?: LearnerLevel | "Fresher" }; journeys?: JourneyState; sideQuests?: Record<string, string[]>; capstones?: CapstoneState };
-
-export default function MissionRouteClient({ track, mission }: { track: LearningTrack; mission: LearningMission; user: { displayName: string; email: string } }) {
+export default function MissionRouteClient({ track, mission, structuredMission }: { track: LearningTrack; mission: LearningMission; structuredMission: MissionContent | null; user: { displayName: string; email: string } }) {
   const router = useRouter();
   const [completed, setCompleted] = useState<number[]>([]);
   const [sideQuests, setSideQuests] = useState<string[]>([]);
@@ -19,13 +18,11 @@ export default function MissionRouteClient({ track, mission }: { track: Learning
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    void fetch("/api/progress", { cache: "no-store" })
-      .then((response) => response.json() as Promise<ProgressResponse>)
+    const controller = new AbortController();
+    void loadProgress(controller.signal)
       .then((data) => {
-        if (!active) return;
         const journeys = (data.journeys || {}) as JourneyState;
-        const sideQuestJourneys = (data.sideQuests || {}) as Record<string, string[]>;
+        const sideQuestJourneys = (data.sideQuests || {}) as SideQuestState;
         const capstones = (data.capstones || {}) as CapstoneState;
         setCompleted(journeys[track] || []);
         setSideQuests(sideQuestJourneys[track] || []);
@@ -33,16 +30,17 @@ export default function MissionRouteClient({ track, mission }: { track: Learning
         const savedLevel = data.own?.level;
         setLevel(savedLevel === "Fresher" ? "Beginner" : savedLevel || "Beginner");
       })
-      .finally(() => active && setLoaded(true));
-    return () => { active = false; };
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setLoaded(true);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoaded(true);
+      });
+    return () => controller.abort();
   }, [track]);
 
   const save = async (nextCompleted: number[], nextCapstone = capstoneKey, nextLevel = level) => {
-    await fetch("/api/progress", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "save_progress", track, level: nextLevel, completed: nextCompleted, sideQuests, capstoneKey: nextCapstone }),
-    });
+    await saveProgress({ track, level: nextLevel, completed: nextCompleted, sideQuests, capstoneKey: nextCapstone });
   };
 
   const completeMission = (id: number) => {
@@ -68,6 +66,7 @@ export default function MissionRouteClient({ track, mission }: { track: Learning
     <MissionPage
       track={track}
       mission={mission}
+      structuredMission={structuredMission}
       completed={completed.includes(mission.id)}
       capstoneKey={capstoneKey}
       learnerLevel={level}

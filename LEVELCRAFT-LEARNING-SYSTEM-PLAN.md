@@ -854,6 +854,8 @@ Exit criteria:
 
 ### Phase 1 — Content platform foundation
 
+**Status:** Complete — first production slice. See [`docs/curriculum/PHASE-1-ROLLOUT.md`](./docs/curriculum/PHASE-1-ROLLOUT.md).
+
 **Objective:** Make high-quality content repeatable and enforceable.
 
 Deliverables:

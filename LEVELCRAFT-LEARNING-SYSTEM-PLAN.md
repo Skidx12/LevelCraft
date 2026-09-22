@@ -993,7 +993,7 @@ Exit criteria:
 
 ### Phase 1B — Content and mission-loading boundaries
 
-**Status:** In progress — server-selected structured mission loading is active for the two schema-v1 missions.
+**Status:** In progress — server-selected structured loading, stable mission identity and version-aware section progress are active. See [`docs/architecture/PHASE-1B-CONTENT-VERSIONING.md`](./docs/architecture/PHASE-1B-CONTENT-VERSIONING.md).
 
 **Objective:** Finish the transition from legacy embedded mission structures to independently loaded, schema-driven content.
 

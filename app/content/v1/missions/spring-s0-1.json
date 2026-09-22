@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "id": "S0.1",
+  "legacy": { "track": "Spring Boot", "numericId": 0 },
+  "arcId": "S0",
+  "rank": "E",
+  "status": "technical_review",
+  "title": "The object-construction problem Spring is designed to solve",
+  "summary": "Build StudentService with plain Java first, expose tight coupling, and identify exactly which construction responsibility Spring will later take over.",
+  "xp": 260,
+  "estimatedMinutes": 60,
+  "prerequisiteIds": ["J2.5"],
+  "outcomes": [
+    "Explain why StudentService needs a repository without confusing that repository with a database framework.",
+    "Create and connect an in-memory repository using plain Java constructors.",
+    "Identify the composition root where application objects are assembled.",
+    "Compare internal construction with dependency injection before adding Spring annotations."
+  ],
+  "briefing": {
+    "story": "The Student Management application can register students, but StudentService currently constructs its own storage. Testing it or changing storage now requires editing business code. Your mission is to expose that coupling before Spring hides the construction work.",
+    "purpose": "Spring dependency injection only makes sense after the learner sees the manual responsibility it automates: choosing implementations, constructing objects and connecting collaborators.",
+    "mentalModel": "Imagine a field medic who must also manufacture every tool before treating a patient. StudentService should perform registration rules, not decide how repositories are built. A composition root acts like the equipment officer: it creates the tools and supplies them to the service.",
+    "prerequisites": [
+      { "name": "Class and object", "explanation": "A class defines state and behaviour; an object is a runtime instance created from it." },
+      { "name": "Constructor", "explanation": "A creation boundary that can require the values or collaborators an object needs." },
+      { "name": "Interface", "explanation": "A contract that describes a capability without fixing one implementation." },
+      { "name": "Collection", "explanation": "A Java structure such as Map used here to store students in memory." }
+    ],
+    "terms": [
+      { "term": "Dependency", "meaning": "A collaborator another object needs to perform its job.", "example": "StudentService depends on StudentRepository to save and find students." },
+      { "term": "Repository", "meaning": "An application boundary that provides storage-oriented operations in domain language.", "example": "StudentRepository exposes save and findById; the first implementation uses a Map, not a database." },
+      { "term": "Tight coupling", "meaning": "A design where one component directly knows or creates a replaceable implementation.", "example": "StudentService calling new InMemoryStudentRepository() ties business logic to that class." },
+      { "term": "Dependency injection", "meaning": "Supplying a dependency from outside the object that uses it.", "example": "new StudentService(repository) injects the repository through the constructor." },
+      { "term": "Composition root", "meaning": "The application location where concrete objects are selected, created and connected.", "example": "main constructs InMemoryStudentRepository and passes it into StudentService." }
+    ],
+    "misconceptions": [
+      { "belief": "A repository always means Spring Data JPA and a database.", "correction": "A repository is first an application abstraction. This mission implements it with a plain HashMap." },
+      { "belief": "Dependency injection requires Spring annotations.", "correction": "Passing a repository into a constructor is dependency injection in plain Java; Spring can automate the assembly later." },
+      { "belief": "Spring creates objects because Java cannot.", "correction": "Java constructs the objects. Spring coordinates when and how eligible application objects are constructed and connected." }
+    ],
+    "readinessCheck": "If StudentService contains new InMemoryStudentRepository(), which two responsibilities does the service now own?"
+  },
+  "demonstration": {
+    "title": "Build the complete application without Spring",
+    "introduction": "The example deliberately contains no annotation, database or Spring dependency. First understand the application boundary and manual wiring.",
+    "files": [
+      { "path": "src/main/java/academy/student/Student.java", "language": "java", "code": "package academy.student;\n\npublic record Student(String id, String name) {\n  public Student {\n    if (id == null || id.isBlank()) throw new IllegalArgumentException(\"id is required\");\n    if (name == null || name.isBlank()) throw new IllegalArgumentException(\"name is required\");\n  }\n}\n" },
+      { "path": "src/main/java/academy/student/StudentRepository.java", "language": "java", "code": "package academy.student;\n\nimport java.util.Optional;\n\npublic interface StudentRepository {\n  void save(Student student);\n  Optional<Student> findById(String id);\n}\n" },
+      { "path": "src/main/java/academy/student/InMemoryStudentRepository.java", "language": "java", "code": "package academy.student;\n\nimport java.util.HashMap;\nimport java.util.Map;\nimport java.util.Optional;\n\npublic final class InMemoryStudentRepository implements StudentRepository {\n  private final Map<String, Student> students = new HashMap<>();\n\n  @Override\n  public void save(Student student) {\n    students.put(student.id(), student);\n  }\n\n  @Override\n  public Optional<Student> findById(String id) {\n    return Optional.ofNullable(students.get(id));\n  }\n}\n" },
+      { "path": "src/main/java/academy/student/StudentService.java", "language": "java", "code": "package academy.student;\n\npublic final class StudentService {\n  private final StudentRepository repository;\n\n  public StudentService(StudentRepository repository) {\n    if (repository == null) throw new IllegalArgumentException(\"repository is required\");\n    this.repository = repository;\n  }\n\n  public Student register(String id, String name) {\n    if (repository.findById(id).isPresent()) {\n      throw new IllegalStateException(\"student already exists: \" + id);\n    }\n    Student student = new Student(id, name);\n    repository.save(student);\n    return student;\n  }\n}\n" },
+      { "path": "src/main/java/academy/student/StudentApplication.java", "language": "java", "code": "package academy.student;\n\npublic final class StudentApplication {\n  public static void main(String[] args) {\n    StudentRepository repository = new InMemoryStudentRepository();\n    StudentService service = new StudentService(repository);\n\n    Student student = service.register(\"STU-101\", \"Ravi\");\n    System.out.println(\"Registered: \" + student);\n  }\n}\n" }
+    ],
+    "runInstructions": [
+      "Create the academy.student package and all five files exactly as shown.",
+      "Run StudentApplication using Java 17.",
+      "Set a breakpoint inside StudentService.register and inspect the repository field.",
+      "Run again and follow the call from application to service to repository."
+    ],
+    "expectedOutput": "Registered: Student[id=STU-101, name=Ravi]",
+    "executionFlow": [
+      "StudentApplication acts as the composition root and chooses InMemoryStudentRepository.",
+      "The repository object is injected into StudentService through its constructor.",
+      "StudentService enforces the duplicate-registration rule without knowing Map details.",
+      "InMemoryStudentRepository stores the student and returns it through the repository contract."
+    ]
+  },
+  "training": {
+    "workspace": "Use a plain Java 17 project first. Do not generate a Spring Boot project until the manual wiring and coupling exercises are complete.",
+    "steps": [
+      {
+        "title": "Run a complete plain-Java baseline",
+        "goal": "Understand every object before delegating construction to a container.",
+        "why": "Spring terminology is easier when the learner already recognizes the application objects and their relationships.",
+        "where": "StudentApplication.main and the academy.student package.",
+        "action": "Create all demonstration files, run StudentApplication and trace the calls in the debugger.",
+        "observe": "The application works without Spring, annotations, a database or reflection.",
+        "ifItFails": "Confirm every file declares package academy.student and the project uses Java 17.",
+        "checkpoint": "You can identify which object creates dependencies and which object applies registration rules."
+      },
+      {
+        "title": "Expose tight coupling deliberately",
+        "goal": "See the design problem dependency injection solves.",
+        "why": "A recommendation is memorable after its rejected alternative is observed.",
+        "where": "StudentService.",
+        "action": "Temporarily remove the constructor parameter and create new InMemoryStudentRepository() inside StudentService.",
+        "observe": "StudentService now selects a concrete storage implementation and cannot receive a simple fake without editing its code.",
+        "ifItFails": "If nothing appears different, write a second repository implementation and try supplying it; internal construction prevents the substitution.",
+        "checkpoint": "You can name business logic and object construction as two responsibilities now mixed together."
+      },
+      {
+        "title": "Restore constructor injection",
+        "goal": "Make the required dependency explicit and externally supplied.",
+        "why": "A valid StudentService cannot be created without its required repository, and the field can remain final.",
+        "where": "StudentService constructor and StudentApplication.main.",
+        "action": "Restore the final StudentRepository field and constructor, then pass the repository from StudentApplication.",
+        "observe": "Business behaviour remains unchanged while implementation selection returns to the composition root.",
+        "ifItFails": "If the compiler reports that the constructor arguments differ, update every new StudentService call to provide a repository.",
+        "checkpoint": "Search StudentService and confirm it contains no new InMemoryStudentRepository call."
+      },
+      {
+        "title": "Prove replaceability with a fake",
+        "goal": "Demonstrate that the boundary improves testing and changeability.",
+        "why": "An abstraction earns its complexity when a meaningful collaborator can be replaced.",
+        "where": "A new FakeStudentRepository test helper or small practice main method.",
+        "action": "Implement StudentRepository with a fake that records the last saved student, inject it and register one student.",
+        "observe": "The service rule can be exercised without using the Map-backed implementation.",
+        "ifItFails": "Implement both interface methods and inject the fake through the same constructor used by production code.",
+        "checkpoint": "The fake records STU-101 and StudentService remains unchanged."
+      }
+    ],
+    "breakRepair": {
+      "breakAction": "Call new StudentService(null) and invoke register.",
+      "symptom": "Construction fails immediately with repository is required instead of failing later at an unrelated line.",
+      "repair": "Supply a real repository implementation through the constructor.",
+      "lesson": "Constructor injection turns a required collaborator into part of the creation contract and prevents partially initialized service objects."
+    },
+    "pauseAndExplain": [
+      { "level": "recall", "prompt": "What is the dependency required by StudentService?" },
+      { "level": "trace", "prompt": "Trace the creation and method-call sequence from StudentApplication to the Map." },
+      { "level": "compare", "prompt": "How does internal repository construction differ from constructor injection?" },
+      { "level": "predict", "prompt": "What changes if PostgreSqlStudentRepository replaces InMemoryStudentRepository while StudentService depends only on the interface?" }
+    ]
+  },
+  "hunterNotes": {
+    "coreRules": [
+      "Understand manual wiring before asking Spring to automate it.",
+      "Use constructor injection for dependencies required throughout an object's valid lifetime.",
+      "Keep business services dependent on application contracts rather than storage details.",
+      "A repository in this mission is a plain Java boundary; Spring Data arrives later."
+    ],
+    "useCases": [
+      "Supplying repositories, clients, clocks or policies to application services.",
+      "Replacing an infrastructure implementation with a deterministic fake during unit tests.",
+      "Moving concrete-object selection into one application composition boundary."
+    ],
+    "avoidWhen": [
+      "Do not create an interface for every class when there is no meaningful boundary, alternate implementation or isolation need.",
+      "Do not use dependency injection to pass ordinary short-lived method data such as a student ID."
+    ],
+    "advantages": [
+      "Required collaborators are visible at construction time.",
+      "Business logic can be tested without constructing production infrastructure.",
+      "Implementation changes are localized to the composition root."
+    ],
+    "costs": [
+      "Additional interfaces and wiring add navigation and must represent meaningful boundaries.",
+      "Large constructors reveal that a class may own too many responsibilities; hiding them with field injection does not fix the design."
+    ],
+    "alternatives": [
+      { "option": "Setter injection", "chooseWhen": "A collaborator is genuinely optional or reconfigurable after construction.", "tradeOff": "The object may exist temporarily without the collaborator and must define that state safely." },
+      { "option": "Field injection", "chooseWhen": "Primarily encountered in legacy code or narrow framework-managed cases.", "tradeOff": "Dependencies become hidden, fields cannot naturally remain final and plain unit construction becomes awkward." },
+      { "option": "Direct construction", "chooseWhen": "Creating an internal value or stable implementation that is not a replaceable collaborator.", "tradeOff": "Using it for infrastructure inside business services creates tight coupling." }
+    ],
+    "mistakes": [
+      { "symptom": "A unit test must start Spring to test a simple business rule.", "cause": "The service depends on hidden container state or constructs infrastructure internally.", "correction": "Keep the rule in a plain class with constructor-supplied contracts." },
+      { "symptom": "Spring reports multiple candidate beans later in the campaign.", "cause": "Several implementations satisfy one dependency and no selection rule is declared.", "correction": "Choose intentionally using configuration, a qualifier or a primary implementation after learning those mechanisms." }
+    ],
+    "interviewRecall": [
+      { "question": "Why is constructor injection usually preferred for required dependencies?", "answer": "It makes dependencies explicit, permits final fields, prevents normally constructing an incomplete object and supports plain unit tests." },
+      { "question": "Does dependency injection require Spring?", "answer": "No. Passing a collaborator into a constructor or method is dependency injection; Spring is one container that can automate object creation and wiring." }
+    ],
+    "references": [
+      { "title": "Spring Framework Core Technologies — Dependencies", "url": "https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html", "kind": "primary" },
+      { "title": "Spring Framework Core Technologies — Bean Overview", "url": "https://docs.spring.io/spring-framework/reference/core/beans/definition.html", "kind": "primary" }
+    ]
+  },
+  "quest": {
+    "scenario": "The academy must notify a student after registration. The notification channel may later be email, SMS or a test fake. Extend the plain-Java application without allowing StudentService to construct a channel implementation.",
+    "currentState": "Student, StudentRepository, InMemoryStudentRepository and constructor-injected StudentService already work. No Spring annotation or database is present.",
+    "requirements": [
+      "Create NotificationChannel with send(Student student).",
+      "Create ConsoleNotificationChannel as one implementation.",
+      "Require NotificationChannel through the StudentService constructor.",
+      "Send the notification only after the repository saves successfully.",
+      "Create RecordingNotificationChannel for verification."
+    ],
+    "constraints": [
+      "StudentService must not call new ConsoleNotificationChannel().",
+      "Repository and notification dependencies must remain final.",
+      "Do not add Spring annotations yet.",
+      "Do not introduce field or setter injection in the final design."
+    ],
+    "acceptanceCriteria": [
+      "StudentService cannot be constructed without both required collaborators.",
+      "A successful registration saves exactly one student and sends exactly one notification.",
+      "A duplicate registration sends no notification.",
+      "The recording fake proves behaviour without reading console text.",
+      "Changing the channel implementation requires no StudentService change."
+    ],
+    "nonGoals": [
+      "No SMTP server, SMS API, Spring container, REST controller or database is required."
+    ],
+    "starterFiles": [
+      { "path": "src/main/java/academy/student/NotificationChannel.java", "language": "java", "code": "package academy.student;\n\npublic interface NotificationChannel {\n  void send(Student student);\n}\n" },
+      { "path": "src/main/java/academy/student/StudentService.java", "language": "java", "code": "package academy.student;\n\npublic final class StudentService {\n  private final StudentRepository repository;\n  private final NotificationChannel notifications;\n\n  public StudentService(\n      StudentRepository repository,\n      NotificationChannel notifications) {\n    // Validate and store both required dependencies.\n  }\n\n  public Student register(String id, String name) {\n    // Reject duplicates, save the new student, then notify.\n    return null;\n  }\n}\n" }
+    ],
+    "hints": [
+      "Keep the creation of ConsoleNotificationChannel in StudentApplication, beside repository creation.",
+      "A recording fake can store the last Student or an integer call count.",
+      "Check for duplicates before creating, saving or notifying."
+    ],
+    "expectedBehaviour": [
+      "Production wiring prints a notification after registration.",
+      "Verification wiring records one notification for a successful registration and zero for a rejected duplicate."
+    ],
+    "evidence": {
+      "instructions": "Provide the StudentService constructor, composition-root wiring and recording fake. Explain why the two collaborators are constructor dependencies and how you verified ordering.",
+      "minimumCharacters": 140
+    },
+    "validation": {
+      "mode": "guided-evidence",
+      "instructions": [
+        "Run the application with InMemoryStudentRepository and ConsoleNotificationChannel.",
+        "Run a verification case with RecordingNotificationChannel.",
+        "Attempt duplicate registration and confirm the notification count does not increase.",
+        "Search StudentService for concrete repository/channel construction and confirm none exists."
+      ]
+    }
+  },
+  "trial": {
+    "explainPrompt": "Defend the statement: StudentService should know what StudentRepository can do, but not how the selected repository is constructed or where it stores data.",
+    "question": "Which code is performing dependency injection in the plain-Java demonstration?",
+    "options": [
+      "The HashMap inside InMemoryStudentRepository",
+      "StudentApplication passing repository into new StudentService(repository)",
+      "The Student record constructor",
+      "Optional.ofNullable inside findById"
+    ],
+    "answer": 1,
+    "explanation": "The composition root creates a concrete repository and supplies it from outside StudentService through the constructor. That is dependency injection without a framework."
+  },
+  "debrief": {
+    "capability": "You can identify a required collaborator, extract a meaningful boundary and wire it manually through a constructor.",
+    "applicationEvolution": "Student Management now separates registration policy from in-memory storage and notification implementations.",
+    "tradeOff": "Interfaces and external wiring add structure, but they are valuable when they isolate a genuine change or testing boundary.",
+    "nextMission": "S0.2 introduces IoC, beans and ApplicationContext as automation for the construction and wiring responsibility you performed manually.",
+    "reflection": "Which objects belong in your composition root, and which values should remain ordinary method parameters?"
+  },
+  "review": {
+    "contentVersion": "1.0.0-rc1",
+    "author": "LevelCraft Curriculum Team",
+    "technicalReviewer": null,
+    "beginnerReviewer": null,
+    "editorialReviewer": null,
+    "lastReviewed": "2026-09-22",
+    "testedWith": { "java": "17", "springBoot": "Not required — plain Java preparation mission" },
+    "changeNote": "First schema-v1 Spring golden mission for Content Review Mode; teaches the manual responsibility before the container."
+  }
+}

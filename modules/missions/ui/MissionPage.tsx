@@ -25,7 +25,9 @@ export default function MissionPage(props: MissionPageProps) {
         mission={structured}
         completed={props.completed}
         learnerLevel={props.learnerLevel || "Beginner"}
+        initialSection={props.initialSection || "briefing"}
         onLevelChange={props.onLevelChange || (() => undefined)}
+        onSectionChange={props.onSectionChange || (() => undefined)}
         onBack={props.onBack}
         onComplete={props.onComplete}
       />

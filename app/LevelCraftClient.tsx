@@ -12,6 +12,8 @@ import { learningCatalog, type LearningMission, type LearningTrack } from "./con
 import { learnerLevels, levelPrompt, type LearnerLevel } from "./content/learner-levels";
 import { starterRewards } from "./content/rewards";
 import { type SideQuest } from "./content/levelcraft-v2";
+import { getStructuredMission } from "./content/v1/catalog";
+import SchemaMissionPage from "./components/mission/SchemaMissionPage";
 
 const { tracks: curricula, training: trainingDepth, capstones: capstoneOptions, focusModules, sideQuests } = learningCatalog;
 
@@ -34,7 +36,15 @@ function SideNav({ open, close, onNavigate }: { open:boolean; close:()=>void; on
   </aside>;
 }
 
-export function MissionPage({ track, mission, completed, capstoneKey, learnerLevel="Beginner", onLevelChange=()=>undefined, onSelectCapstone, onBack, onComplete }:{ track:LearningTrack; mission:LearningMission; completed:boolean; capstoneKey:string|null; learnerLevel?:LearnerLevel; onLevelChange?:(level:LearnerLevel)=>void; onSelectCapstone:(key:string)=>void; onBack:()=>void; onComplete:(id:number)=>void }) {
+type MissionPageProps = { track:LearningTrack; mission:LearningMission; completed:boolean; capstoneKey:string|null; learnerLevel?:LearnerLevel; onLevelChange?:(level:LearnerLevel)=>void; onSelectCapstone:(key:string)=>void; onBack:()=>void; onComplete:(id:number)=>void };
+
+export function MissionPage(props: MissionPageProps) {
+  const structured = getStructuredMission(props.track, props.mission.id);
+  if (structured) return <SchemaMissionPage mission={structured} completed={props.completed} learnerLevel={props.learnerLevel || "Beginner"} onLevelChange={props.onLevelChange || (()=>undefined)} onBack={props.onBack} onComplete={props.onComplete}/>;
+  return <LegacyMissionPage {...props}/>;
+}
+
+function LegacyMissionPage({ track, mission, completed, capstoneKey, learnerLevel="Beginner", onLevelChange=()=>undefined, onSelectCapstone, onBack, onComplete }: MissionPageProps) {
   const depth=trainingDepth[track][mission.id];
   const modules=focusModules[track]?.[mission.id]||[]; const capstones=capstoneOptions[track]; const isCapstone=mission.id===9;
   const [tab,setTab]=useState("briefing"); const [answer,setAnswer]=useState(""); const [checked,setChecked]=useState<number[]>([]); const [evidence,setEvidence]=useState(""); const [quizChecked,setQuizChecked]=useState(false); const [claimed,setClaimed]=useState(false); const [trainingComplete,setTrainingComplete]=useState(false);

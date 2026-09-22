@@ -6,15 +6,17 @@ import MissionPage from "@/modules/missions/ui/MissionPage";
 import type { LearningMission, LearningTrack } from "../../../content/catalog";
 import type { LearnerLevel } from "../../../content/learner-levels";
 import type { MissionContent } from "../../../content/mission-schema";
-import { loadProgress, saveProgress } from "@/modules/progress/client/progress-api";
-import type { CapstoneState, JourneyState, SideQuestState } from "@/modules/progress/model/progress";
+import type { MissionIdentity } from "@/modules/curriculum/public";
+import { loadProgress, saveProgress, saveSectionProgress } from "@/modules/progress/client/progress-api";
+import type { CapstoneState, JourneyState, MissionSection, SideQuestState } from "@/modules/progress/model/progress";
 
-export default function MissionRouteClient({ track, mission, structuredMission }: { track: LearningTrack; mission: LearningMission; structuredMission: MissionContent | null; user: { displayName: string; email: string } }) {
+export default function MissionRouteClient({ track, mission, missionIdentity, structuredMission }: { track: LearningTrack; mission: LearningMission; missionIdentity: MissionIdentity; structuredMission: MissionContent | null; user: { displayName: string; email: string } }) {
   const router = useRouter();
   const [completed, setCompleted] = useState<number[]>([]);
   const [sideQuests, setSideQuests] = useState<string[]>([]);
   const [capstoneKey, setCapstoneKey] = useState<string | null>(null);
   const [level, setLevel] = useState<LearnerLevel>("Beginner");
+  const [initialSection, setInitialSection] = useState<MissionSection>("briefing");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -27,6 +29,8 @@ export default function MissionRouteClient({ track, mission, structuredMission }
         setCompleted(journeys[track] || []);
         setSideQuests(sideQuestJourneys[track] || []);
         setCapstoneKey(capstones[track] || null);
+        const savedSection = data.sectionProgress?.[track]?.[missionIdentity.stableId];
+        setInitialSection(savedSection?.contentVersion === missionIdentity.contentVersion ? savedSection.lastSection : "briefing");
         const savedLevel = data.own?.level;
         setLevel(savedLevel === "Fresher" ? "Beginner" : savedLevel || "Beginner");
       })
@@ -37,7 +41,7 @@ export default function MissionRouteClient({ track, mission, structuredMission }
         if (!controller.signal.aborted) setLoaded(true);
       });
     return () => controller.abort();
-  }, [track]);
+  }, [track, missionIdentity.contentVersion, missionIdentity.stableId]);
 
   const save = async (nextCompleted: number[], nextCapstone = capstoneKey, nextLevel = level) => {
     await saveProgress({ track, level: nextLevel, completed: nextCompleted, sideQuests, capstoneKey: nextCapstone });
@@ -59,6 +63,10 @@ export default function MissionRouteClient({ track, mission, structuredMission }
     void save(completed, capstoneKey, next);
   };
 
+  const selectSection = (section: MissionSection) => {
+    void saveSectionProgress({ track, missionId: missionIdentity.stableId, section, contentVersion: missionIdentity.contentVersion }).catch(() => undefined);
+  };
+
   if (!loaded) return <main className="route-loading">Preparing your mission…</main>;
 
   return (
@@ -67,11 +75,13 @@ export default function MissionRouteClient({ track, mission, structuredMission }
       track={track}
       mission={mission}
       structuredMission={structuredMission}
+      initialSection={initialSection}
       completed={completed.includes(mission.id)}
       capstoneKey={capstoneKey}
       learnerLevel={level}
       onLevelChange={selectLevel}
       onSelectCapstone={selectCapstone}
+      onSectionChange={selectSection}
       onBack={() => router.push(`/?track=${track === "Java" ? "java" : "spring-boot"}#curriculum`)}
       onComplete={completeMission}
     />

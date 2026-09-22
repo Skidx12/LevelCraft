@@ -4,7 +4,7 @@ import { getD1 } from "../../../lib/d1";
 export const dynamic = "force-dynamic";
 
 const tracks = ["Java","Spring Boot"];
-const levels = ["Beginner","Fresher","Intermediate","Professional"];
+const levels = ["Beginner","Intermediate","Advanced","Professional"];
 const missionXp: Record<string, number[]> = {
   Java: [180,220,300,340,420,420,760,560,720,1500],
   "Spring Boot": [260,280,420,420,560,620,580,720,720,1800],
@@ -48,13 +48,14 @@ export async function POST(request: Request) {
     const auth = await identify(); if (!auth) return Response.json({ error: "Sign in required" }, { status: 401 });
     const body = await request.json() as { action?: string; track?: string; level?: string; completed?: unknown; sideQuests?: unknown; capstoneKey?: unknown; email?: string };
     if (body.action === "save_progress") {
-      if (!tracks.includes(body.track || "") || !levels.includes(body.level || "") || !Array.isArray(body.completed)) return Response.json({ error: "Invalid progress" }, { status: 400 });
+      const requestedLevel = body.level === "Fresher" ? "Beginner" : body.level;
+      if (!tracks.includes(body.track || "") || !levels.includes(requestedLevel || "") || !Array.isArray(body.completed)) return Response.json({ error: "Invalid progress" }, { status: 400 });
       const xpTable = missionXp[body.track!];
       const completed = [...new Set(body.completed.filter((x): x is number => Number.isInteger(x) && x >= 0 && x < xpTable.length))];
       const completedSideQuests = Array.isArray(body.sideQuests) ? [...new Set(body.sideQuests.filter((x): x is string => typeof x === "string" && validSideQuests[body.track!].includes(x)))] : [];
       const capstoneKey = typeof body.capstoneKey === "string" && validCapstones.includes(body.capstoneKey) ? body.capstoneKey : null;
       const xp = completed.reduce((sum,id) => sum + xpTable[id], 0) + completedSideQuests.reduce((sum,id) => sum + (sideQuestXp[id] || 0), 0); const checkpoint = completed.length;
-      await auth.db.prepare("UPDATE progress SET track=?,level=?,completed_json=?,xp=?,checkpoint=?,updated_at=? WHERE user_id=?").bind(body.track, body.level, JSON.stringify(completed), xp, checkpoint, Date.now(), auth.user.userId).run();
+      await auth.db.prepare("UPDATE progress SET track=?,level=?,completed_json=?,xp=?,checkpoint=?,updated_at=? WHERE user_id=?").bind(body.track, requestedLevel, JSON.stringify(completed), xp, checkpoint, Date.now(), auth.user.userId).run();
       await auth.db.prepare("INSERT INTO journey_progress (user_id,track,completed_json,side_quests_json,capstone_key,xp,checkpoint,updated_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id,track) DO UPDATE SET completed_json=excluded.completed_json,side_quests_json=excluded.side_quests_json,capstone_key=excluded.capstone_key,xp=excluded.xp,checkpoint=excluded.checkpoint,updated_at=excluded.updated_at").bind(auth.user.userId, body.track, JSON.stringify(completed), JSON.stringify(completedSideQuests), capstoneKey, xp, checkpoint, Date.now()).run();
       return Response.json({ status: "saved", xp, checkpoint });
     }

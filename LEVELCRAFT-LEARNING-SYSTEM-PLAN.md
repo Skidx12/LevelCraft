@@ -11,6 +11,7 @@ It converts the product vision into:
 - a continuous real-world application storyline;
 - level-appropriate missions, quests, side quests and rank trials;
 - a reusable content-authoring standard;
+- an enterprise-ready modular-monolith application architecture;
 - measurable quality gates;
 - a phased delivery roadmap.
 
@@ -120,6 +121,11 @@ All LevelCraft explanations, examples, stories, quests and diagrams should be or
 | Routing | Real mission routes available | Continue route-based pages and avoid placing the entire platform in one client view |
 | Content storage | Dedicated `app/content` layer exists | Introduce versioned schemas and validation before moving to a CMS or database |
 | Code execution | Not embedded | Provide local IDE instructions and evidence-based validation; defer sandbox execution |
+| Frontend architecture | Dashboard, missions, rewards, guild and progress behaviour still meet inside `LevelCraftClient.tsx` | Split by business module and ensure mission routes do not import the complete dashboard bundle |
+| Backend architecture | One progress route currently handles identity, progress, journeys and friendships | Introduce explicit module services and API contracts before adding more capabilities |
+| Domain rules | XP, side-quest and capstone rules are duplicated between content and API code | Establish one authoritative policy per module and consume it through public module interfaces |
+| Portability | ChatGPT Sites supplies hosting, auth headers and D1 at present | Keep provider-specific adapters at the system edge so GitHub, Docker and other hosts remain viable |
+| Performance | Most experience code is client-rendered and eagerly imported | Prefer route-level server composition, narrow client islands, deferred non-critical features and bounded payloads |
 
 ---
 
@@ -788,7 +794,94 @@ Every published mission records:
 
 ---
 
-## 16. Platform information architecture
+## 16. Target platform architecture
+
+LevelCraft will evolve as a **modular monolith**: one deployable application with enforceable internal business boundaries. This gives the project independent ownership, simple deployment and transactional consistency now, while keeping modules separable if traffic or team ownership later justifies dedicated services.
+
+The architecture change is evolutionary. Existing learner behaviour remains available while routes and responsibilities move behind module contracts. A large rewrite is not required before content improvement can continue.
+
+### 16.1 Module map
+
+| Module | Owns | Must not own |
+| --- | --- | --- |
+| Identity | User identity, profile and hosting-auth adapters | Curriculum, rewards or mission content |
+| Content | Versioned missions, arcs, references and publishing state | Learner progress or UI state |
+| Curriculum | Prerequisites, recommended sequence and unlock decisions | Authentication or persistence adapters |
+| Missions | Mission presentation, section navigation and completion intent | XP calculation or raw database queries |
+| Progress | Journey state, checkpoints, completion evidence and learner level | Mission prose or reward visuals |
+| Quests and evaluation | Quest attempts, evidence policies and validation results | Learner identity implementation |
+| Rewards | Reward definitions, unlock policy and claim history | Curriculum authoring |
+| Social | Guild relationships and progress-sharing projections | Primary progress mutation |
+| Capstones | Domain selection, milestones and portfolio evidence | Generic mission rendering |
+| Administration | Content review, publish workflow and audit views | Direct cross-module table mutation |
+| Analytics | Events and derived learning/product metrics | Authoritative operational state |
+
+Each module exposes a small public interface. Route handlers and pages compose those interfaces; they do not reach through a module to its private files or tables.
+
+### 16.2 Dependency rules
+
+- UI routes may import module public interfaces, not module internals.
+- Content and curriculum are independent of React, hosting and database providers.
+- Mission UI may read content and submit progress intent; it does not calculate authoritative XP.
+- Progress may consume stable mission and reward identifiers through explicit policy contracts.
+- Provider adapters implement authentication, database, object storage and future execution interfaces.
+- Cross-module writes occur through application services rather than shared-table access.
+- Circular module dependencies are prohibited and checked during review.
+- Stable mission, quest and reward IDs are never derived from display order.
+
+### 16.3 Runtime shape
+
+```text
+Browser routes and client islands
+        -> route handlers / application services
+                -> domain modules and policies
+                        -> provider adapters
+                                -> D1 today; PostgreSQL/object storage later
+```
+
+The first deployment remains one application. Separate services are introduced only for capabilities with a different security or scaling profile, such as isolated code execution, upload scanning, notification delivery or analytics ingestion.
+
+### 16.4 API boundaries
+
+The application should converge on capability-specific endpoints:
+
+```text
+/api/content/*       published mission and curriculum reads
+/api/progress/*      journey state, level and completion
+/api/evaluation/*    evidence and future validation attempts
+/api/rewards/*       unlocks, claims and reward history
+/api/social/*        guild relationships and shared projections
+/api/capstones/*     domain choice and milestone evidence
+/api/admin/content/* review and publishing workflow
+/api/analytics/*     bounded event ingestion
+```
+
+These endpoints may initially call modules in the same process. Their contracts provide ownership boundaries without adding network hops or operational overhead.
+
+### 16.5 Rendering and performance rules
+
+- Default to server-rendered route shells and data reads.
+- Use client components only for interaction that requires browser state.
+- A standalone mission route must not import the dashboard, guild, reward vault or unrelated mission payloads.
+- Load one mission and its required navigation context, not the whole curriculum body.
+- Lazy-load legacy or secondary experiences during migration.
+- Start independent data reads in parallel and avoid request waterfalls.
+- Cache published content by version; never cache learner-private progress globally.
+- Apply `content-visibility` or pagination to genuinely long collections where appropriate.
+- Record bundle size, route response time and database-query count before declaring a phase complete.
+
+### 16.6 Portability and infrastructure boundaries
+
+- GitHub is the long-term source of truth for code and documentation.
+- ChatGPT Sites remains a supported preview/production target, not an architectural dependency.
+- Hosting authentication headers are translated by an identity adapter.
+- D1 access is isolated behind repository interfaces so PostgreSQL can be introduced without changing learning modules.
+- Configuration and secrets remain outside source control.
+- Builds must remain reproducible through documented commands and later through CI and Docker.
+- Health, readiness, structured logs, metrics and graceful shutdown enter the deployment-hardening phase.
+- An architecture decision record documents why the modular monolith precedes microservices.
+
+### 16.7 Information architecture
 
 LevelCraft remains a routed web application. Interactive elements may use client-side components, but the complete learning experience must not be one oversized client page.
 
@@ -813,7 +906,7 @@ Recommended routes:
 /review/content
 ```
 
-### 16.1 Route requirements
+### 16.8 Route requirements
 
 - direct links survive refresh;
 - browser back/forward navigation behaves correctly;
@@ -828,7 +921,7 @@ Recommended routes:
 
 ## 17. Delivery roadmap
 
-The work should proceed in controlled releases. Infrastructure migration remains deferred until the product-readiness gate is met.
+The work proceeds architecture-first in controlled releases. The architecture foundation is deliberately thin: establish module boundaries and remove major coupling before continuing large content phases. Infrastructure migration remains deferred until the product-readiness gate is met.
 
 ### Phase 0 — Curriculum and dependency audit
 
@@ -874,6 +967,67 @@ Exit criteria:
 - a sample mission renders entirely from the content schema;
 - invalid or incomplete content fails validation;
 - React components contain presentation logic, not embedded curriculum prose.
+
+### Phase 1A — Modular-monolith foundation
+
+**Status:** Complete — first architecture slice. See [`docs/architecture/ADR-001-MODULAR-MONOLITH.md`](./docs/architecture/ADR-001-MODULAR-MONOLITH.md) and [`docs/architecture/PHASE-1A-ROLLOUT.md`](./docs/architecture/PHASE-1A-ROLLOUT.md).
+
+**Objective:** Create stable ownership boundaries before additional content, rewards and validation features increase coupling.
+
+Deliverables:
+
+- architecture decision record and module dependency rules;
+- top-level module structure with public interfaces;
+- standalone mission routes decoupled from the dashboard bundle;
+- progress policies separated from HTTP and persistence concerns;
+- provider-specific authentication and database access kept at the application edge;
+- documented performance baseline and route-level acceptance checks.
+
+Exit criteria:
+
+- a structured mission can render without importing `LevelCraftClient.tsx`;
+- adding a mission does not require changing dashboard behaviour;
+- authoritative XP and identifier validation live in one progress policy;
+- type checking, content validation and production build pass;
+- the deployed learner experience preserves existing progress behaviour.
+
+### Phase 1B — Content and mission-loading boundaries
+
+**Status:** In progress — server-selected structured mission loading is active for the two schema-v1 missions.
+
+**Objective:** Finish the transition from legacy embedded mission structures to independently loaded, schema-driven content.
+
+Deliverables:
+
+- Content, Curriculum and Missions module interfaces;
+- one-mission-at-a-time loading by stable ID;
+- schema-driven replacement path for every legacy mission;
+- section-level route and progress design;
+- published-content cache policy and content-version migration rules.
+
+Exit criteria:
+
+- no mission route imports legacy dashboard code;
+- mission prose exists only in validated content records;
+- a content revision cannot silently invalidate existing learner progress.
+
+### Phase 1C — Capability APIs and persistence boundaries
+
+**Objective:** Replace the single mixed progress endpoint with capability-owned application services and contracts.
+
+Deliverables:
+
+- Progress, Rewards, Social and Capstone application services;
+- capability-specific route handlers;
+- repository interfaces and D1 adapters;
+- consistent validation, error and authorization contracts;
+- migration path for PostgreSQL without changing domain behaviour.
+
+Exit criteria:
+
+- no route handler contains core scoring or unlock policy;
+- modules do not query another module's tables directly;
+- progress, rewards, guild and capstone operations can be tested independently.
 
 ### Phase 2 — Golden-path pilot missions
 
@@ -1021,16 +1175,19 @@ This phase begins only after stable content schemas and successful learner pilot
 | --- | --- |
 | 1 | Curriculum inventory, dependency graph and content scorecard |
 | 2 | Mission schema, validators and authoring template |
-| 3 | First Java golden mission and reusable renderers |
-| 4 | Spring injection golden mission and review-mode tooling |
-| 5–6 | Java Foundation Gate content |
-| 7–8 | Object Modelling and Functional Java content |
-| 9–11 | Reliability and Multithreading campaign |
-| 12–13 | Spring Core and Boot fundamentals |
-| 14–16 | Web API, persistence, security and testing |
-| 17–18 | Production topics, capstones and Legend trial |
-| 19 | Beginner pilot, accessibility and content corrections |
-| 20 | Product-readiness review and migration-gate decision |
+| 3 | Modular-monolith foundation and mission/dashboard bundle separation |
+| 4 | Content/mission-loading boundaries and legacy migration path |
+| 5 | Capability APIs, progress policy and persistence boundaries |
+| 6 | First Java golden mission and reusable renderers |
+| 7 | Spring injection golden mission and review-mode tooling |
+| 8–9 | Java Foundation Gate content |
+| 10–11 | Object Modelling and Functional Java content |
+| 12–14 | Reliability and Multithreading campaign |
+| 15–16 | Spring Core and Boot fundamentals |
+| 17–19 | Web API, persistence, security and testing |
+| 20–21 | Production topics, capstones and Legend trial |
+| 22 | Beginner pilot, accessibility and content corrections |
+| 23 | Product-readiness review and migration-gate decision |
 
 Sprint scope should be adjusted by actual authoring and review capacity. Content quality is the limiting factor; mission counts must not become vanity output.
 
@@ -1195,12 +1352,15 @@ A mission is publishable only when all items below are true.
 
 ### P0 — Must happen first
 
-1. Build the complete Java and Spring dependency map.
-2. Split the current ten-per-track curriculum into smaller mission candidates.
-3. Finalize the versioned mission-content schema.
-4. Create the authoring and review checklist.
-5. Rewrite one Java and one Spring mission as golden standards.
-6. Validate those missions with a beginner before mass authoring.
+1. Establish the modular-monolith module map and dependency rules.
+2. Remove the standalone mission route's eager dependency on the full dashboard client.
+3. Move progress scoring and identifier validation behind an authoritative policy.
+4. Finish the complete Java and Spring dependency map.
+5. Split the current ten-per-track curriculum into smaller mission candidates.
+6. Finalize the versioned mission-content schema and legacy migration path.
+7. Create the authoring and review checklist.
+8. Rewrite one Java and one Spring mission as golden standards.
+9. Validate those missions with a beginner before mass authoring.
 
 ### P1 — Build the core journey
 

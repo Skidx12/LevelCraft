@@ -1,0 +1,22 @@
+[
+  { "stableId": "J0.1", "track": "Java", "legacyNumericId": 0, "contentVersion": "1.0.0-rc1", "format": "schema-v1" },
+  { "stableId": "J1.1", "track": "Java", "legacyNumericId": 1, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J2.1", "track": "Java", "legacyNumericId": 2, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J2.2", "track": "Java", "legacyNumericId": 3, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J3.1", "track": "Java", "legacyNumericId": 4, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J4.1", "track": "Java", "legacyNumericId": 5, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J5.1", "track": "Java", "legacyNumericId": 6, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J4.2", "track": "Java", "legacyNumericId": 7, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J6.1", "track": "Java", "legacyNumericId": 8, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "J6.T", "track": "Java", "legacyNumericId": 9, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S0.1", "track": "Spring Boot", "legacyNumericId": 0, "contentVersion": "1.0.0-rc1", "format": "schema-v1" },
+  { "stableId": "S1.1", "track": "Spring Boot", "legacyNumericId": 1, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S2.1", "track": "Spring Boot", "legacyNumericId": 2, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S2.2", "track": "Spring Boot", "legacyNumericId": 3, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S3.1", "track": "Spring Boot", "legacyNumericId": 4, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S4.1", "track": "Spring Boot", "legacyNumericId": 5, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S4.2", "track": "Spring Boot", "legacyNumericId": 6, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S5.1", "track": "Spring Boot", "legacyNumericId": 7, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S6.1", "track": "Spring Boot", "legacyNumericId": 8, "contentVersion": "0.1.0-legacy", "format": "legacy" },
+  { "stableId": "S6.T", "track": "Spring Boot", "legacyNumericId": 9, "contentVersion": "0.1.0-legacy", "format": "legacy" }
+]

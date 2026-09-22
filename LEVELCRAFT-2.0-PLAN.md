@@ -1,5 +1,7 @@
 # LevelCraft 2.0 — System Awakening
 
+> Detailed execution blueprint: [`LEVELCRAFT-LEARNING-SYSTEM-PLAN.md`](./LEVELCRAFT-LEARNING-SYSTEM-PLAN.md)
+
 ## Product promise
 
 LevelCraft trains and verifies engineers. The main campaign teaches capability, side quests strengthen judgment, boss battles combine skills, and rank trials require evidence.
